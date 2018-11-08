@@ -30,6 +30,12 @@ class OysterCard
     value
   end
 
+  def pay
+    @journey_log.journey_history.each do |journey|
+      journey.paid ? nil : deduct(journey.fare)
+    end
+  end
+
   def deduct(value)
     @balance -= value
     value
