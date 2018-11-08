@@ -1,7 +1,5 @@
 class Journey
 
-  ZONE_FARE = [1,2,3,3,3]
-
   attr_reader :entry_station, :exit_station, :paid, :fare
   MIN_FARE = 1
   PENALTY_FARE = 6
@@ -31,15 +29,15 @@ class Journey
 
   def fare
     @paid = true
-    journey_complete? ? ZONE_FARE[zone_visited - 1] : PENALTY_FARE
+    journey_complete? ? zone_crossed + 1 : PENALTY_FARE
   end
 
   def journey_complete?
     @exit_station && @entry_station
   end
 
-  def zone_visited
-    [@entry_station.zone, @exit_station.zone].max
+  def zone_crossed
+    (@entry_station.zone - @exit_station.zone).abs
   end
 
 

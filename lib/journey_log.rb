@@ -1,5 +1,4 @@
 require_relative 'journey'
-require_relative 'station'
 
 class JourneyLog
 
@@ -27,6 +26,10 @@ class JourneyLog
 
   def pay
     @journey_history[0].update_fare
+  end
+
+  def last_incomplete
+    @journey_history[0].in_journey?
   end
 
 end

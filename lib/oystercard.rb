@@ -1,10 +1,10 @@
 require_relative 'journey_log'
+require_relative 'station'
 
 class OysterCard
 
   attr_reader :balance, :journey_log
   MIN_FARE = 1
-  DEFAULT_BALANCE = 0
   MAX_LIMIT = 90
 
   def initialize(journey_log_class = JourneyLog)
@@ -13,6 +13,7 @@ class OysterCard
   end
 
   def touch_in(station)
+    deduct(@journey_log.pay) if @journey_log.last_incomplete
     insufficient_funds?(@balance)
     @journey_log.start(station)
   end
@@ -20,28 +21,22 @@ class OysterCard
   def touch_out(station)
     @journey_log.finish(station)
     complete_journey
+    deduct(@journey_log.pay)
   end
 
   def top_up(value)
     fail "Your balance is currently #{@balance} and your limit is #{OysterCard::MAX_LIMIT}" if exceed_max_limit?(value)
     @balance += value
-    value
   end
 
   private
 
   def complete_journey
     @journey_log.complete_journey
-    pay
-  end
-
-  def pay
-    @journey_log.pay
   end
 
   def deduct(value)
     @balance -= value
-    value
   end
 
   def insufficient_funds?(balance)
