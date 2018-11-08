@@ -4,9 +4,6 @@ class Journey
   MIN_FARE = 1
   PENALTY_FARE = 6
 
-  def initialize
-  end
-
   def start(station)
     @entry_station = station
   end
@@ -24,13 +21,6 @@ class Journey
   end
 
   def journey_complete?
-    @end_station
+    @exit_station && @entry_station
   end
-
-  private
-
-  # def insufficient_funds?(balance)
-  #   fail 'You dont have suffient balance to touch in' if balance < @min_fare
-  # end
-
 end
