@@ -23,8 +23,8 @@ class Journey
   end
 
   def fare
-    journey_complete? ? ZONE_FARE[zone_visited - 1] : PENALTY_FARE
     @paid = true
+    journey_complete? ? ZONE_FARE[zone_visited - 1] : PENALTY_FARE
   end
 
   private

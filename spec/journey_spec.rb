@@ -1,89 +1,68 @@
 require 'journey'
-require 'station'
 
 describe Journey do
 
-  # let(:oystercard) { double :oystercard, :in_journey? => false }
-  let(:journey) {Journey.new}
-  let(:oystercard) {OysterCard.new}
-  let(:station_1) {Station.new('Victoria', 1)}
-  let(:station_2) {Station.new('Aldgate', 1)}
+  let(:journey) { Journey.new }
+  let(:station_1) { double :station_1, name: "Victoria", zone: 1 }
+  let(:station_2) { double :station_2, name: "Mile End", zone: 2 }
+  let(:station_5) { double :station_5, name: "Heathrow", zone: 5 }
 
   describe '#initialize' do
-    it 'sets in journey to nil by default' do
-      expect(journey.in_journey?).to eq nil
-    end
-
-    it 'sets the minimum fare to touch in with a default value of 1' do
-      expect(journey.min_fare).to eq 1
+    it "sets journey paid state to false" do
+      expect(journey.paid).to eq false
     end
   end
 
-  describe '#touch_in' do
+  describe '#start' do
     it 'changes oystercard status to in journey' do
-      journey.touch_in(1, station_1)
+      journey.start(station_1)
       expect(journey.in_journey?).to eq true
     end
 
-    it 'user is not allowed to touch if there is less than £1 in the balance' do
-      message = 'You dont have suffient balance to touch in'
-      expect { journey.touch_in(0, station_1) }.to raise_error message
-    end
   end
 
-  describe '#touch_out' do
+  describe '#finish' do
     it 'changes oystercard status to not in journey' do
-      journey.touch_in(1, station_1)
-      journey.touch_out(station_2)
+      journey.start(station_1)
+      journey.finish(station_2)
       expect(journey.in_journey?).to eq false
     end
   end
 
+  describe "#fare" do
+    it 'return 1 if all station zone 1' do
+      journey.start(station_1)
+      journey.finish(station_1)
+      expect(journey.fare).to eq 1
+    end
+
+    it 'return 2 if station zone 2' do
+      journey.start(station_2)
+      journey.finish(station_1)
+      expect(journey.fare).to eq 2
+    end
+
+    it 'return 3 if station zone 5' do
+      journey.start(station_2)
+      journey.finish(station_5)
+      expect(journey.fare).to eq 3
+    end
+
+    it "return #{described_class::PENALTY_FARE} if journey not complete" do
+      journey.finish(station_5)
+      expect(journey.fare).to eq described_class::PENALTY_FARE
+    end
+  end
 
   describe '#entry_station' do
     it 'entry station is stored in the card' do
-      expect(journey.touch_in(1, station_1)).to eq station_1
+      journey.start(station_1)
+      expect(journey.entry_station).to eq station_1
     end
-  end
-
-  describe '#journeys' do
-
-    it 'checks that journeys list is empty by default' do
-      expect(oystercard.journey_history).to eq []
-    end
-
-    it 'stores journeys into a hash' do
-      journey.touch_in(1, station_1)
-      journey.touch_out(station_2)
-      oystercard.add_journey(journey)
-      expect(oystercard.journey_history[0].entry_station).to eq station_1
-      expect(oystercard.journey_history[0].end_station).to eq station_2
-    end
-  end
-
-  it "knows if a journey is not complete" do
-    expect(subject).not_to be_journey_complete
   end
 
   it 'has a penalty fare by default' do
     expect(subject.fare).to eq Journey::PENALTY_FARE
-  end
-
-  it "it charges the penalty fare if you don't touch out"  do
-    oystercard.top_up(10)
-    journey.touch_in(oystercard.balance, station_1)
-    oystercard.deduct(journey.fare)
-
-    expect(oystercard.balance).to eq 4
-  end
-
-  it "it charges the min fare if you touch in and touch out"  do
-    oystercard.top_up(10)
-    journey.touch_in(oystercard.balance, station_1)
-    journey.touch_out(station_2)
-    oystercard.deduct(journey.fare)
-
-    expect(oystercard.balance).to eq 9
   end
 
 end
