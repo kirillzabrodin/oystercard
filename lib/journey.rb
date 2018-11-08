@@ -2,12 +2,13 @@ class Journey
 
   ZONE_FARE = [1,2,3,3,3]
 
-  attr_reader :entry_station, :exit_station, :paid
+  attr_reader :entry_station, :exit_station, :paid, :fare
   MIN_FARE = 1
   PENALTY_FARE = 6
 
   def initialize
     @paid = false
+    @fare = MIN_FARE
   end
 
   def start(station)
@@ -22,12 +23,16 @@ class Journey
     @entry_station && !@exit_station
   end
 
+  def update_fare
+    @fare = fare
+  end
+
+  private
+
   def fare
     @paid = true
     journey_complete? ? ZONE_FARE[zone_visited - 1] : PENALTY_FARE
   end
-
-  private
 
   def journey_complete?
     @exit_station && @entry_station

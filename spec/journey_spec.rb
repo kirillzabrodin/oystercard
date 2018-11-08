@@ -33,24 +33,24 @@ describe Journey do
     it 'return 1 if all station zone 1' do
       journey.start(station_1)
       journey.finish(station_1)
-      expect(journey.fare).to eq 1
+      expect(journey.update_fare).to eq 1
     end
 
     it 'return 2 if station zone 2' do
       journey.start(station_2)
       journey.finish(station_1)
-      expect(journey.fare).to eq 2
+      expect(journey.update_fare).to eq 2
     end
 
     it 'return 3 if station zone 5' do
       journey.start(station_2)
       journey.finish(station_5)
-      expect(journey.fare).to eq 3
+      expect(journey.update_fare).to eq 3
     end
 
     it "return #{described_class::PENALTY_FARE} if journey not complete" do
       journey.finish(station_5)
-      expect(journey.fare).to eq described_class::PENALTY_FARE
+      expect(journey.update_fare).to eq described_class::PENALTY_FARE
     end
   end
 
@@ -62,7 +62,7 @@ describe Journey do
   end
 
   it 'has a penalty fare by default' do
-    expect(subject.fare).to eq Journey::PENALTY_FARE
+    expect(subject.update_fare).to eq Journey::PENALTY_FARE
   end
 
 end

@@ -1,4 +1,5 @@
 require_relative 'journey'
+require_relative 'station'
 
 class JourneyLog
 
@@ -22,6 +23,10 @@ class JourneyLog
 
   def complete_journey
     @journey_history.unshift(@journey_class.new)
+  end
+
+  def pay
+    @journey_history[0].update_fare
   end
 
 end
