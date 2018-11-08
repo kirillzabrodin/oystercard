@@ -1,68 +1,77 @@
 require 'journey'
 
 describe Journey do
+  subject(:journey){described_class.new(entry_station: :station)}
 
-  let(:journey) { Journey.new }
-  let(:station_1) { double :station_1, name: "Victoria", zone: 1 }
-  let(:station_2) { double :station_2, name: "Mile End", zone: 2 }
-  let(:station_5) { double :station_5, name: "Heathrow", zone: 5 }
-
-  describe '#initialize' do
-    it "sets journey paid state to false" do
-      expect(journey.paid).to eq false
-    end
+  it 'is created with an entry station' do
+    expect(journey.entry_station).to eq :station
   end
 
-  describe '#start' do
-    it 'changes oystercard status to in journey' do
-      journey.start(station_1)
-      expect(journey.in_journey?).to eq true
-    end
-
+  it "knows if a journey is not complete" do
+    expect(journey).not_to be_complete
   end
 
-  describe '#finish' do
-    it 'changes oystercard status to not in journey' do
-      journey.start(station_1)
-      journey.finish(station_2)
-      expect(journey.in_journey?).to eq false
+  describe '#fare' do
+
+    let(:station) { double :station, zone: 1}
+    let(:other_station) { double :other_station }
+    let(:penalty_station) {double :penalty_station, zone: 0}
+
+    it 'has a penalty fare by default' do
+      expect(journey.fare).to eq Journey::PENALTY_FARE
+    end
+
+    it "returns itself when exiting a journey" do
+      expect(journey.exit(station)).to eq(journey)
+    end
+
+    context 'given an entry station' do
+      subject(:journey){described_class.new(entry_station: station)}
+
+      it "returns a penalty fare if no exit station given" do
+        journey.exit
+        expect(journey.fare).to eq Journey::PENALTY_FARE
+      end
+
+      it "completes journey if exit with no station given" do
+        journey.exit
+        expect(journey.complete?).to eq true
+      end
+
+      context 'given an exit station' do
+        before do
+          journey.exit(other_station)
+        end
+
+        it 'calculates a fare for zone 1 to zone 1' do
+          update_zones(1,1)
+          expect(journey.fare).to eq 1
+        end
+
+        it 'calculates a fare for zone 1 to zone 2' do
+          update_zones(1,2)
+          expect(journey.fare).to eq 2
+        end
+
+        it 'calculates a fare for zone 6 to zone 5' do
+          update_zones(6,5)
+          expect(journey.fare).to eq 2
+        end
+
+        it 'calculates a fare for zone 6 to zone 1' do
+          update_zones(6,2)
+          expect(journey.fare).to eq 5
+        end
+
+        it "knows if a journey is complete" do
+          expect(journey).to be_complete
+        end
+
+        def update_zones(entry_zone, exit_zone)
+          allow(station).to receive(:zone).and_return(entry_zone)
+          allow(other_station).to receive(:zone).and_return(exit_zone)
+        end
+      end
     end
   end
-
-  describe "#fare" do
-    it 'return 1 if all station zone 1' do
-      journey.start(station_1)
-      journey.finish(station_1)
-      expect(journey.update_fare).to eq 1
-    end
-
-    it 'return 2 if station zone 2' do
-      journey.start(station_2)
-      journey.finish(station_1)
-      expect(journey.update_fare).to eq 2
-    end
-
-    it 'return 3 if station zone 5' do
-      journey.start(station_2)
-      journey.finish(station_5)
-      expect(journey.update_fare).to eq 3
-    end
-
-    it "return #{described_class::PENALTY_FARE} if journey not complete" do
-      journey.finish(station_5)
-      expect(journey.update_fare).to eq described_class::PENALTY_FARE
-    end
-  end
-
-  describe '#entry_station' do
-    it 'entry station is stored in the card' do
-      journey.start(station_1)
-      expect(journey.entry_station).to eq station_1
-    end
-  end
-
-  it 'has a penalty fare by default' do
-    expect(subject.update_fare).to eq Journey::PENALTY_FARE
-  end
-
 end

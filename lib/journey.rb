@@ -4,41 +4,35 @@ class Journey
   MIN_FARE = 1
   PENALTY_FARE = 6
 
-  def initialize
-    @paid = false
-    @fare = MIN_FARE
+  def initialize(entry_station: nil)
+    @entry_station = entry_station
+    @complete = false
   end
 
-  def start(station)
-    @entry_station = station
-  end
-
-  def finish(station)
+  def exit(station=nil)
     @exit_station = station
- end
-
-  def in_journey?
-    @entry_station && !@exit_station
+    @complete = true
+    self
   end
 
-  def update_fare
-    @fare = fare
+  def fare
+    return PENALTY_FARE if penalty?
+    zones.inject(:-) + 1
   end
+
+  def complete?
+    @complete
+  end
+
 
   private
 
-  def fare
-    @paid = true
-    journey_complete? ? zone_crossed + 1 : PENALTY_FARE
+  def zones
+    [entry_station, exit_station].map(&:zone).sort{|a,b| b <=> a }
   end
 
-  def journey_complete?
-    @exit_station && @entry_station
+  def penalty?
+    (!entry_station || !exit_station)
   end
-
-  def zone_crossed
-    (@entry_station.zone - @exit_station.zone).abs
-  end
-
 
 end

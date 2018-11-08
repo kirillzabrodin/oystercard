@@ -2,34 +2,43 @@ require_relative 'journey'
 
 class JourneyLog
 
-  def initialize(journey_class = Journey)
-    @journey_class = journey_class
-    @journey_history = []
-    @journey_history.unshift(@journey_class.new)
-  end
+  NO_CHARGE = 0
 
-  def start(entry_station)
-    @journey_history[0].start(entry_station)
-  end
+  def initialize(journey_class: Journey)
+      @journey_class = journey_class
+      @journeys = []
+    end
 
-  def finish(end_station)
-    @journey_history[0].finish(end_station)
-  end
+    def start_journey(station)
+      fail 'Already in a Journey.' if current_journey.entry_station
+      add(journey_class.new(entry_station: station))
+    end
 
-  def journeys
-    @journey_history.dup
-  end
+    def exit_journey(station)
+      current_journey.exit(station)
+    end
 
-  def complete_journey
-    @journey_history.unshift(@journey_class.new)
-  end
+    def journeys
+      @journeys.dup
+    end
 
-  def pay
-    @journey_history[0].update_fare
-  end
+    def outstanding_charges
+      incomplete_journey ? incomplete_journey.exit.fare : NO_CHARGE
+    end
 
-  def last_incomplete
-    @journey_history[0].in_journey?
-  end
+    private
+    attr_reader :journey_class
+
+    def incomplete_journey
+      journeys.reject(&:complete?).first
+    end
+
+    def current_journey
+      incomplete_journey || journey_class.new
+    end
+
+    def add(journey)
+      @journeys << journey
+    end
 
 end

@@ -1,68 +1,65 @@
 require 'oystercard'
 
 describe OysterCard do
+  let(:station){double(:station)}
+  let(:journey){double :journey, fare: 5, complete?: true}
+  let(:journey_log){double :journey_log, all: [journey], exit_journey: journey, outstanding_charges: 0}
+  subject(:oystercard){described_class.new(journey_log: journey_log)}
 
-  oystercard = (OysterCard.new)
-  let(:journey_log) { double :journey_log,  start: "A station", finish: "A station", journey_log: true, complete_journey: true, pay: true}
-
-  describe '#balance' do
-    it 'returns the user balance' do
-      expect(oystercard.balance).to eq 0
-    end
+  it 'has a balance of zero' do
+    expect(oystercard.balance).to eq(0)
   end
 
-  it 'allows the user to top up their balance' do
-    expect(subject.top_up(5)).to eq 5
+  it "can top up the balance" do
+    oystercard.top_up(10)
+    expect(oystercard.balance).to eq(10)
   end
 
-  it 'Adds the top up value to the balance' do
-    subject.top_up(10)
-    expect(subject.balance).to eq 10
+  it "can't deduct if the balance goes below zero" do
+    expect{oystercard.touch_in(station)}.to raise_error("Insufficient balance to touch in.")
   end
 
-  it 'doesn"t allow the user to top up above card limit (£90)' do
-    expect { subject.top_up(95) }.to raise_error "Your balance is currently #{subject.balance} and your limit is #{OysterCard::MAX_LIMIT}"
+  it "won't let you touch in if you don't have enough balance" do
+    expect{oystercard.touch_in(station)}.to raise_error( "Insufficient balance to touch in.")
   end
 
-  it 'doesnt" allow the user to top up when at limit' do
-    subject.top_up(90)
-    expect { subject.top_up(5) }.to raise_error "Your balance is currently #{subject.balance} and your limit is #{OysterCard::MAX_LIMIT}"
-  end
+  context 'it has a full balance' do
+    before{oystercard.top_up(OysterCard::MAX_LIMIT)}
 
-  describe '#touch_in' do
-    it "doesn't let you ride if balance too low" do
-      expect { subject.touch_in("A station") }.to raise_error "Your balance is below #{OysterCard::MIN_FARE}"
+    it "won't let you top up over the balance limit" do
+      expect{oystercard.top_up(1)}.to raise_error("Exceeds #{OysterCard::MAX_LIMIT}")
     end
 
-    it 'calls start on journey log' do
-      JourneyLog.stub(:new) {journey_log}
-      card = OysterCard.new
-      card.top_up(90)
-      expect(card.journey_log).to receive(:start).with("A station")
-      card.touch_in("A station")
-    end
-  end
-
-  describe '#touch_out' do
-    it 'calls finish on journey log' do
-      JourneyLog.stub(:new) {journey_log}
-      card = OysterCard.new
-      expect(card.journey_log).to receive(:finish).with("A station")
-      card.touch_out("A station")
+    it "knows what station in touched in at" do
+      expect(journey_log).to receive(:start_journey).with(station)
+      oystercard.touch_in(station)
     end
 
-    it 'calls finish on journey log' do
-      JourneyLog.stub(:new) {journey_log}
-      card = OysterCard.new
-      expect(card.journey_log).to receive(:complete_journey)
-      card.touch_out("A station")
+    it "informs journey log in which station it touched out" do
+      expect(journey_log).to receive(:exit_journey).with(station)
+      oystercard.touch_out(station)
     end
-  end
 
-  describe '#pay' do
-    it 'calls finish on journey log' do
-      expect(subject).to receive(:pay)
-      subject.touch_out("A station")
+
+    context 'when touched in' do
+      before do
+        allow(journey_log).to receive(:start_journey)
+        oystercard.touch_in(station)
+      end
+
+      it "deducts the charge from the balance when touching out" do
+        expect{oystercard.touch_out(station)}.to change{oystercard.balance}.by(-journey.fare)
+      end
+
+      it "will notify journey log to close previous fares" do
+        expect(journey_log).to receive(:outstanding_charges)
+        oystercard.touch_in(station)
+      end
+
+      it "will charge for the previous fare if you touch in twice" do
+        allow(journey_log).to receive(:outstanding_charges).and_return(6)
+        expect{oystercard.touch_in(station)}.to change{oystercard.balance}.by(-6)
+      end
     end
   end
 end
